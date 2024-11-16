@@ -63,7 +63,7 @@ def display_logo_and_heading():
     ntpc_logo_path = "ntpc_logo.png"  
     elab_logo_path = "centralized_elab_logo.png"  
 
-    col1, col2, col3 = st.columns([1, 10, 1])  # Columns for layout
+    col1, col2, col3 = st.columns([1, 6, 1])  # Columns for layout
 
     with col1:
         if os.path.exists(ntpc_logo_path):
