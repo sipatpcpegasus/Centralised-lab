@@ -63,7 +63,7 @@ def display_logo_and_heading():
     ntpc_logo_path = "ntpc_logo.png"  
     elab_logo_path = "centralized_elab_logo.png"  
 
-    col1, col2, col3 = st.columns([1, 6, 1])  # Columns for layout
+    col1, col2, col3 = st.columns([1, 5, 1])  # Columns for layout
 
     with col1:
         if os.path.exists(ntpc_logo_path):
@@ -75,8 +75,8 @@ def display_logo_and_heading():
         # Center the heading vertically and horizontally
         st.markdown(
             """
-            <div style="display: flex; justify-content: center; align-items: center; height: 100px;">
-                <h1 style="text-align: center; font-size: 24px; color: #333;">NTPC Electronics Repair Lab</h1>
+            <div style="display: flex; justify-content: center; align-items: center; height: 200px;">
+                <h1 style="text-align: center; font-size: 40px; color: #333;">NTPC Electronics Repair Lab</h1>
             </div>
             """,
             unsafe_allow_html=True,
