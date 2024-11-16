@@ -60,7 +60,7 @@ def get_blogs():
 # Display logos and heading
 def display_logo_and_heading():
     logo_path = "ntpc_logo.png"  # Path to NTPC logo
-    big_image_path = "centralized_elab_logo.png"  # Path to centralized lab logo
+    small_image_path = "centralized_elab_logo.png"  # Path to centralized lab logo
 
     col1, col2 = st.columns([1, 6])  # Layout proportions
     with col1:
@@ -70,8 +70,8 @@ def display_logo_and_heading():
             st.warning("NTPC logo not found!")
 
     with col2:
-        if os.path.exists(big_image_path):
-            st.image(big_image_path, use_column_width=True)
+        if os.path.exists(small_image_path):
+            st.image(small_image_path, use_column_width=True)
         else:
             st.warning("Centralized E-Lab logo not found!")
 
