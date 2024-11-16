@@ -59,23 +59,25 @@ def get_blogs():
 
 # Display logos and heading
 def display_logo_and_heading():
-    logo_path = "ntpc_logo.png"  # Path to NTPC logo
-    small_image_path = "centralized_elab_logo.png"  # Path to centralized lab logo
+    # Paths to logos
+    ntpc_logo_path = "ntpc_logo.png"  
+    elab_logo_path = "centralized_elab_logo.png"  
 
-    col1, col2 = st.columns([1, 6])  # Layout proportions
+    col1, col2, col3 = st.columns([1, 6, 1])  # Columns for layout
     with col1:
-        if os.path.exists(logo_path):
-            st.image(logo_path, use_column_width=True)
+        if os.path.exists(ntpc_logo_path):
+            st.image(ntpc_logo_path, use_column_width=False, width=80)  # Smaller NTPC logo
         else:
             st.warning("NTPC logo not found!")
 
     with col2:
-        if os.path.exists(small_image_path):
-            st.image(small_image_path, use_column_width=True)
+        st.markdown("<h1 style='text-align: center;'>NTPC Electronics Repair Lab</h1>", unsafe_allow_html=True)
+
+    with col3:
+        if os.path.exists(elab_logo_path):
+            st.image(elab_logo_path, use_column_width=False, width=100)  # Smaller E-Lab logo
         else:
             st.warning("Centralized E-Lab logo not found!")
-
-    st.markdown("<h1 style='text-align: center;'>NTPC Electronics Repair Lab</h1>", unsafe_allow_html=True)
 
 # Login functionality
 def login():
