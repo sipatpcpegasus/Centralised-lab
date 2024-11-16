@@ -15,13 +15,14 @@ conn = sqlite3.connect('repair_blog_db.db')
 c = conn.cursor()
 
 # Create tables for repair requests and blogs
-c.execute('''CREATE TABLE IF NOT EXISTS requests (username TEXT, issue TEXT, details TEXT, status TEXT)''')
+c.execute('''CREATE TABLE IF NOT EXISTS requests (username TEXT, name TEXT, employee_no TEXT, station TEXT, department TEXT, material_name TEXT, material_code TEXT, quantity INTEGER, defect_description TEXT, priority TEXT, status TEXT)''')
 c.execute('''CREATE TABLE IF NOT EXISTS blogs (author TEXT, title TEXT, content TEXT)''')
 conn.commit()
 
 # Helper functions for database operations
-def add_request(username, issue, details):
-    c.execute("INSERT INTO requests (username, issue, details, status) VALUES (?, ?, ?, ?)", (username, issue, details, 'Pending'))
+def add_request(username, name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority):
+    c.execute("INSERT INTO requests (username, name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+              (username, name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority, 'Pending'))
     conn.commit()
 
 def get_requests():
@@ -58,15 +59,62 @@ def app():
         st.session_state['logged_in'] = False
 
     if st.session_state['logged_in']:
+        # Add custom CSS for positioning the logos and heading
+        st.markdown("""
+            <style>
+            .logo-container-left {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                z-index: 9999;
+            }
+            .logo-container-right {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                z-index: 9999;
+            }
+            .heading {
+                text-align: center;
+                font-size: 30px;
+                font-weight: bold;
+                margin-top: 50px;
+            }
+            .login-heading {
+                position: absolute;
+                top: 30%;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            </style>
+        """, unsafe_allow_html=True)
+
+        # Add the logos and heading
+        st.markdown('<div class="logo-container-left"><img src="ntpc_logo.png" width="100"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="logo-container-right"><img src="centralized_elab_logo.png" width="100"></div>', unsafe_allow_html=True)
+
+        if not st.session_state['logged_in']:
+            st.markdown('<div class="login-heading"><h1>NTPC Electronics Repair Lab</h1></div>', unsafe_allow_html=True)
+
         if st.session_state['role'] == 'User':
             st.title(f"Welcome, {st.session_state['username']}")
             option = st.selectbox("Choose an option", ["Submit Repair Request", "View Blogs", "Post Blog"])
 
             if option == "Submit Repair Request":
-                issue = st.text_input("Issue Title")
-                details = st.text_area("Issue Details")
+                # Repair Request Form
+                st.header("Repair Request Form")
+                name = st.text_input("Name")
+                employee_no = st.text_input("Employee No.")
+                station = st.text_input("Station")
+                department = st.text_input("Department")
+                material_name = st.text_input("Material Name")
+                material_code = st.text_input("Material Code")
+                quantity = st.number_input("Quantity", min_value=1)
+                defect_description = st.text_area("Defect Description")
+                priority = st.selectbox("Priority", ["Low", "Medium", "High"])
+
                 if st.button("Submit"):
-                    add_request(st.session_state['username'], issue, details)
+                    add_request(st.session_state['username'], name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority)
                     st.success("Request submitted successfully")
 
             elif option == "View Blogs":
@@ -93,7 +141,9 @@ def app():
             for req in requests:
                 st.subheader(f"Issue: {req[1]} (Status: {req[3]})")
                 st.write(f"Submitted by: {req[0]}")
-                st.write(req[2])
+                st.write(f"Material: {req[5]} - Code: {req[6]}")
+                st.write(f"Quantity: {req[7]} | Priority: {req[9]}")
+                st.write(req[8])  # Defect Description
                 st.write("---")
             
             st.header("Manage Blogs")
