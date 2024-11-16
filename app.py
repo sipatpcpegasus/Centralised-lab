@@ -98,9 +98,12 @@ def main():
     if "auth_state" not in st.session_state:
         st.session_state.auth_state = False
 
-    if st.session_state.auth_state:
-        display_logo_and_heading()
+    # Display logos and heading on every page
+    display_logo_and_heading()
 
+    if not st.session_state.auth_state:
+        login()
+    else:
         if st.session_state['role'] == 'User':
             st.title(f"Welcome, {st.session_state['username']}")
             option = st.selectbox("Choose an option", ["Submit Repair Request", "View Blogs", "Post Blog"])
@@ -167,8 +170,6 @@ def main():
                 if st.button("Post"):
                     add_blog(st.session_state['username'], title, content)
                     st.success("Blog posted successfully")
-    else:
-        login()
 
 if __name__ == "__main__":
     main()
