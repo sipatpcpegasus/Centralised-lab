@@ -54,47 +54,18 @@ def login():
             st.sidebar.error("Invalid login credentials")
 
 # Main app page based on role
-def app():
-    if 'logged_in' not in st.session_state:
-        st.session_state['logged_in'] = False
+def main():
+    if "auth_state" not in st.session_state:
+        st.session_state.auth_state = False
 
-    if st.session_state['logged_in']:
-        # Add custom CSS for positioning the logos and heading
-        st.markdown("""
-            <style>
-            .logo-container-left {
-                position: absolute;
-                top: 10px;
-                left: 10px;
-                z-index: 9999;
-            }
-            .logo-container-right {
-                position: absolute;
-                top: 10px;
-                right: 10px;
-                z-index: 9999;
-            }
-            .heading {
-                text-align: center;
-                font-size: 30px;
-                font-weight: bold;
-                margin-top: 50px;
-            }
-            .login-heading {
-                position: absolute;
-                top: 30%;
-                left: 50%;
-                transform: translateX(-50%);
-            }
-            </style>
-        """, unsafe_allow_html=True)
+    col1, col2 = st.columns([200, 1])
+    logo_path = "ntpc_logo.png"
+    col1.image(logo_path, use_column_width=False, width=100)
 
-        # Add the logos and heading
-        st.markdown('<div class="logo-container-left"><img src="ntpc_logo.png" width="100"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="logo-container-right"><img src="centralized_elab_logo.png" width="100"></div>', unsafe_allow_html=True)
+    big_image_path = "centralized_elab_logo.png"
+    col2.image(big_image_path, use_column_width=False, width=150)
 
-        if not st.session_state['logged_in']:
-            st.markdown('<div class="login-heading"><h1>NTPC Electronics Repair Lab</h1></div>', unsafe_allow_html=True)
+    st.title("NTPC Electronics Repair Lab")
 
         if st.session_state['role'] == 'User':
             st.title(f"Welcome, {st.session_state['username']}")
