@@ -1,26 +1,25 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
+import json
+
+# Load credentials from credentials.json
+def load_credentials():
+    with open("credentials.json", "r") as file:
+        return json.load(file)
+
+credentials = load_credentials()
 
 # Initialize SQLite database connection
 conn = sqlite3.connect('repair_blog_db.db')
 c = conn.cursor()
 
-# Create tables for users, repair requests, and blogs
-c.execute('''CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT, role TEXT)''')
+# Create tables for repair requests and blogs
 c.execute('''CREATE TABLE IF NOT EXISTS requests (username TEXT, issue TEXT, details TEXT, status TEXT)''')
 c.execute('''CREATE TABLE IF NOT EXISTS blogs (author TEXT, title TEXT, content TEXT)''')
 conn.commit()
 
 # Helper functions for database operations
-def create_user(username, password, role):
-    c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", (username, password, role))
-    conn.commit()
-
-def check_user(username, password):
-    c.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
-    return c.fetchone()
-
 def add_request(username, issue, details):
     c.execute("INSERT INTO requests (username, issue, details, status) VALUES (?, ?, ?, ?)", (username, issue, details, 'Pending'))
     conn.commit()
@@ -42,14 +41,13 @@ def login():
     st.sidebar.title("Login")
     username = st.sidebar.text_input("Username")
     password = st.sidebar.text_input("Password", type="password")
-    role = st.sidebar.radio("Role", ("User", "Admin"))
 
     if st.sidebar.button("Login"):
-        user = check_user(username, password)
+        user = next((u for u in credentials["users"] if u["username"] == username and u["password"] == password), None)
         if user:
             st.session_state['logged_in'] = True
             st.session_state['username'] = username
-            st.session_state['role'] = role
+            st.session_state['role'] = user["role"]
             st.sidebar.success(f"Logged in as {username}")
         else:
             st.sidebar.error("Invalid login credentials")
@@ -58,7 +56,7 @@ def login():
 def app():
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
-    
+
     if st.session_state['logged_in']:
         if st.session_state['role'] == 'User':
             st.title(f"Welcome, {st.session_state['username']}")
@@ -115,7 +113,6 @@ def app():
                 if st.button("Post"):
                     add_blog(st.session_state['username'], title, content)
                     st.success("Blog posted successfully")
-    
     else:
         login()
 
