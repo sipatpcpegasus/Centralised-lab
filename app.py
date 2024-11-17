@@ -63,11 +63,11 @@ def display_logo_and_heading():
     ntpc_logo_path = "ntpc_logo.png"  
     elab_logo_path = "centralized_elab_logo.png"  
 
-    col1, col2, col3 = st.columns([1, 5, 1])  # Columns for layout
+    col1, col2, col3 = st.columns([1, 4, 1])  # Columns for layout
 
     with col1:
         if os.path.exists(ntpc_logo_path):
-            st.image(ntpc_logo_path, use_column_width=False, width=120)  # NTPC logo
+            st.image(ntpc_logo_path, use_column_width=False, width=150)  # NTPC logo
         else:
             st.warning("NTPC logo not found!")
 
@@ -84,7 +84,7 @@ def display_logo_and_heading():
 
     with col3:
         if os.path.exists(elab_logo_path):
-            st.image(elab_logo_path, use_column_width=False, width=180)  # Smaller E-Lab logo
+            st.image(elab_logo_path, use_column_width=False, width=280)  # Smaller E-Lab logo
         else:
             st.warning("Centralized E-Lab logo not found!")
 
