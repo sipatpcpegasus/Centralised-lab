@@ -88,27 +88,28 @@ def display_logo_and_heading():
         else:
             st.warning("Centralized E-Lab logo not found!")
 
-# Function to display blogs and success stories in a scrollable container
-def show_blogs_and_success_stories():
-    st.sidebar.title("Explore Blogs and Success Stories")
-    blogs = get_blogs()  # Fetch blogs from the database
+# Function to display blogs and success stories in a centered, lower container
+def show_blogs_and_success_stories_centered():
+    st.markdown("---")  # Divider line
+    st.markdown("<h2 style='text-align: center;'>Blogs and Success Stories</h2>", unsafe_allow_html=True)
     
-    with st.sidebar.expander("Blogs and Success Stories", expanded=True):
-        for blog in blogs:
-            # Display each blog with title and author in a scrollable text area
-            st.markdown(f"### {blog[1]}")  # Blog title
-            st.write(f"**By**: {blog[0]}")  # Author
-            st.text_area("Content", value=blog[2], height=100, max_chars=200, key=blog[1], disabled=True)
-            st.markdown("---")  # Divider for each blog entry
+    blogs = get_blogs()  # Fetch blogs from the database
+
+    # Display blogs in a centered container
+    col1, col2, col3 = st.columns([1, 3, 1])
+    with col2:
+        with st.container():
+            for blog in blogs:
+                st.markdown(f"### {blog[1]}")  # Blog title
+                st.write(f"**By**: {blog[0]}")  # Author
+                st.text_area("Content", value=blog[2], height=100, max_chars=200, key=blog[1], disabled=True)
+                st.markdown("---")  # Divider for each blog entry
 
 # Login functionality
 def login():
     st.sidebar.title("Login")
     username = st.sidebar.text_input("Username")
     password = st.sidebar.text_input("Password", type="password")
-
-    # Display blogs and success stories on the sidebar
-    show_blogs_and_success_stories()
 
     if st.sidebar.button("Login"):
         user = next((u for u in credentials["users"] if u["username"] == username and u["password"] == password), None)
@@ -130,6 +131,7 @@ def main():
 
     if not st.session_state.auth_state:
         login()
+        show_blogs_and_success_stories_centered()  # Show blogs below login page
     else:
         if st.session_state['role'] == 'User':
             st.title(f"Welcome, {st.session_state['username']}")
@@ -200,4 +202,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
