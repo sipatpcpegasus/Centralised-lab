@@ -88,11 +88,27 @@ def display_logo_and_heading():
         else:
             st.warning("Centralized E-Lab logo not found!")
 
+# Function to display blogs and success stories in a scrollable container
+def show_blogs_and_success_stories():
+    st.sidebar.title("Explore Blogs and Success Stories")
+    blogs = get_blogs()  # Fetch blogs from the database
+    
+    with st.sidebar.expander("Blogs and Success Stories", expanded=True):
+        for blog in blogs:
+            # Display each blog with title and author in a scrollable text area
+            st.markdown(f"### {blog[1]}")  # Blog title
+            st.write(f"**By**: {blog[0]}")  # Author
+            st.text_area("Content", value=blog[2], height=100, max_chars=200, key=blog[1], disabled=True)
+            st.markdown("---")  # Divider for each blog entry
+
 # Login functionality
 def login():
     st.sidebar.title("Login")
     username = st.sidebar.text_input("Username")
     password = st.sidebar.text_input("Password", type="password")
+
+    # Display blogs and success stories on the sidebar
+    show_blogs_and_success_stories()
 
     if st.sidebar.button("Login"):
         user = next((u for u in credentials["users"] if u["username"] == username and u["password"] == password), None)
@@ -184,3 +200,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
