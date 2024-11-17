@@ -79,7 +79,7 @@ def display_logo_and_heading():
     ntpc_logo_path = "ntpc_logo.png"  
     elab_logo_path = "centralized_elab_logo.png"  
 
-    col1, col2, col3 = st.columns([1, 4, 1])  # Columns for layout
+    col1, col2, col3 = st.columns([1, 5, 1])  # Columns for layout
 
     with col1:
         if os.path.exists(ntpc_logo_path):
@@ -103,41 +103,25 @@ def display_logo_and_heading():
         else:
             st.warning("Centralized E-Lab logo not found!")
 
-# Auto-scrolling success stories display
+# Auto-scrolling success stories display using st.empty()
 def display_success_stories():
     st.markdown("<h2 style='text-align: center;'>Success Stories</h2>", unsafe_allow_html=True)
-    story_container = st.container()
 
-    # JavaScript code for auto-scrolling effect
-    st.markdown(
-        """
-        <style>
-        .scrollable {
-            max-height: 200px;
-            overflow: hidden;
-            position: relative;
-        }
-        .scrollable > div {
-            animation: scroll 15s linear infinite;
-        }
-        @keyframes scroll {
-            0% { top: 100%; }
-            100% { top: -100%; }
-        }
-        </style>
-        <div class="scrollable">
-            <div>
-                <h3>Success Story 1: ATT System Repair</h3>
-                <p>NTPC's repair team restored the ATT system in Stage-1, saving 19 lakh and ensuring turbine protection system health monitoring. 19 faulty current sensing transducers were repaired in-house.</p>
-                <h3>Success Story 2: Ventilator Repair during COVID-19</h3>
-                <p>During the COVID-19 pandemic, NTPC's repair lab restored two ventilators at NTPC and one at a district hospital. This effort supported critical healthcare needs and earned appreciation from the District Collector.</p>
-                <h3>Success Story 3: ABB IMASI23 Card Repair</h3>
-                <p>NTPC repaired IMASI23 cards for the control system, saving 1.56 crore in replacement costs. With a 95% success rate, the lab ensures high system reliability and significant cost savings.</p>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    # Create an empty container for success stories that will be updated
+    story_container = st.empty()
+
+    # Loop through stories and update the container with a delay to simulate scrolling
+    while True:
+        for story in success_stories:
+            story_container.markdown(
+                f"""
+                <h3>{story['title']}</h3>
+                <p>{story['content']}</p>
+                """,
+                unsafe_allow_html=True
+            )
+            time.sleep(5)  # Delay for 5 seconds before showing the next story
+            story_container.empty()  # Clear the container before showing the next one
 
 # Main app page based on role
 def main():
