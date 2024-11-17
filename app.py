@@ -3,6 +3,7 @@ import pandas as pd
 import sqlite3
 import json
 import os
+import time
 
 # Load credentials from credentials.json
 def load_credentials():
@@ -57,13 +58,28 @@ def get_blogs():
     c.execute("SELECT * FROM blogs")
     return c.fetchall()
 
+# Success stories data
+success_stories = [
+    {
+        "title": "Success Story 1: ATT System Repair",
+        "content": "NTPC's repair team restored the ATT system in Stage-1, saving 19 lakh and ensuring turbine protection system health monitoring. 19 faulty current sensing transducers were repaired in-house."
+    },
+    {
+        "title": "Success Story 2: Ventilator Repair during COVID-19",
+        "content": "During the COVID-19 pandemic, NTPC's repair lab restored two ventilators at NTPC and one at a district hospital. This effort supported critical healthcare needs and earned appreciation from the District Collector."
+    },
+    {
+        "title": "Success Story 3: ABB IMASI23 Card Repair",
+        "content": "NTPC repaired IMASI23 cards for the control system, saving 1.56 crore in replacement costs. With a 95% success rate, the lab ensures high system reliability and significant cost savings."
+    }
+]
+
 # Display logos and heading
 def display_logo_and_heading():
-    # Paths to logos
     ntpc_logo_path = "ntpc_logo.png"  
     elab_logo_path = "centralized_elab_logo.png"  
 
-    col1, col2, col3 = st.columns([1, 5, 1])  # Columns for layout
+    col1, col2, col3 = st.columns([1, 4, 1])  # Columns for layout
 
     with col1:
         if os.path.exists(ntpc_logo_path):
@@ -72,7 +88,6 @@ def display_logo_and_heading():
             st.warning("NTPC logo not found!")
 
     with col2:
-        # Center the heading vertically and horizontally
         st.markdown(
             """
             <div style="display: flex; justify-content: center; align-items: center; height: 200px;">
@@ -88,38 +103,41 @@ def display_logo_and_heading():
         else:
             st.warning("Centralized E-Lab logo not found!")
 
-# Function to display blogs and success stories in a centered, lower container
-def show_blogs_and_success_stories_centered():
-    st.markdown("---")  # Divider line
-    st.markdown("<h2 style='text-align: center;'>Blogs and Success Stories</h2>", unsafe_allow_html=True)
-    
-    blogs = get_blogs()  # Fetch blogs from the database
+# Auto-scrolling success stories display
+def display_success_stories():
+    st.markdown("<h2 style='text-align: center;'>Success Stories</h2>", unsafe_allow_html=True)
+    story_container = st.container()
 
-    # Display blogs in a centered container
-    col1, col2, col3 = st.columns([1, 3, 1])
-    with col2:
-        with st.container():
-            for blog in blogs:
-                st.markdown(f"### {blog[1]}")  # Blog title
-                st.write(f"**By**: {blog[0]}")  # Author
-                st.text_area("Content", value=blog[2], height=100, max_chars=200, key=blog[1], disabled=True)
-                st.markdown("---")  # Divider for each blog entry
-
-# Login functionality
-def login():
-    st.sidebar.title("Login")
-    username = st.sidebar.text_input("Username")
-    password = st.sidebar.text_input("Password", type="password")
-
-    if st.sidebar.button("Login"):
-        user = next((u for u in credentials["users"] if u["username"] == username and u["password"] == password), None)
-        if user:
-            st.session_state.auth_state = True
-            st.session_state.username = username
-            st.session_state.role = user["role"]
-            st.sidebar.success(f"Logged in as {username}")
-        else:
-            st.sidebar.error("Invalid login credentials")
+    # JavaScript code for auto-scrolling effect
+    st.markdown(
+        """
+        <style>
+        .scrollable {
+            max-height: 200px;
+            overflow: hidden;
+            position: relative;
+        }
+        .scrollable > div {
+            animation: scroll 15s linear infinite;
+        }
+        @keyframes scroll {
+            0% { top: 100%; }
+            100% { top: -100%; }
+        }
+        </style>
+        <div class="scrollable">
+            <div>
+                <h3>Success Story 1: ATT System Repair</h3>
+                <p>NTPC's repair team restored the ATT system in Stage-1, saving 19 lakh and ensuring turbine protection system health monitoring. 19 faulty current sensing transducers were repaired in-house.</p>
+                <h3>Success Story 2: Ventilator Repair during COVID-19</h3>
+                <p>During the COVID-19 pandemic, NTPC's repair lab restored two ventilators at NTPC and one at a district hospital. This effort supported critical healthcare needs and earned appreciation from the District Collector.</p>
+                <h3>Success Story 3: ABB IMASI23 Card Repair</h3>
+                <p>NTPC repaired IMASI23 cards for the control system, saving 1.56 crore in replacement costs. With a 95% success rate, the lab ensures high system reliability and significant cost savings.</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # Main app page based on role
 def main():
@@ -129,76 +147,8 @@ def main():
     # Display logos and heading on every page
     display_logo_and_heading()
 
-    if not st.session_state.auth_state:
-        login()
-        show_blogs_and_success_stories_centered()  # Show blogs below login page
-    else:
-        if st.session_state['role'] == 'User':
-            st.title(f"Welcome, {st.session_state['username']}")
-            option = st.selectbox("Choose an option", ["Submit Repair Request", "View Blogs", "Post Blog"])
-
-            if option == "Submit Repair Request":
-                st.header("Repair Request Form")
-                name = st.text_input("Name")
-                employee_no = st.text_input("Employee No.")
-                station = st.text_input("Station")
-                department = st.text_input("Department")
-                material_name = st.text_input("Material Name")
-                material_code = st.text_input("Material Code")
-                quantity = st.number_input("Quantity", min_value=1)
-                defect_description = st.text_area("Defect Description")
-                priority = st.selectbox("Priority", ["Low", "Medium", "High"])
-
-                if st.button("Submit"):
-                    add_request(st.session_state['username'], name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority)
-                    st.success("Request submitted successfully")
-
-            elif option == "View Blogs":
-                st.header("Blogs")
-                blogs = get_blogs()
-                for blog in blogs:
-                    st.subheader(blog[1])
-                    st.write(f"By: {blog[0]}")
-                    st.write(blog[2])
-                    st.write("---")
-
-            elif option == "Post Blog":
-                st.header("Post a Blog")
-                title = st.text_input("Blog Title")
-                content = st.text_area("Blog Content")
-                if st.button("Post"):
-                    add_blog(st.session_state['username'], title, content)
-                    st.success("Blog posted successfully")
-
-        elif st.session_state['role'] == 'Admin':
-            st.title(f"Welcome Admin, {st.session_state['username']}")
-            st.header("View Repair Requests")
-            requests = get_requests()
-            for req in requests:
-                st.subheader(f"Issue: {req[1]} (Status: {req[10]})")
-                st.write(f"Submitted by: {req[0]}")
-                st.write(f"Material: {req[5]} - Code: {req[6]}")
-                st.write(f"Quantity: {req[7]} | Priority: {req[9]}")
-                st.write(req[8])  # Defect Description
-                st.write("---")
-            
-            st.header("Manage Blogs")
-            option = st.selectbox("Manage", ["View Blogs", "Post Blog"])
-            
-            if option == "View Blogs":
-                blogs = get_blogs()
-                for blog in blogs:
-                    st.subheader(blog[1])
-                    st.write(f"By: {blog[0]}")
-                    st.write(blog[2])
-                    st.write("---")
-            
-            elif option == "Post Blog":
-                title = st.text_input("Blog Title")
-                content = st.text_area("Blog Content")
-                if st.button("Post"):
-                    add_blog(st.session_state['username'], title, content)
-                    st.success("Blog posted successfully")
+    # Display success stories in a scrolling section
+    display_success_stories()
 
 if __name__ == "__main__":
     main()
