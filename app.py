@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 import sqlite3
 import json
 import os
@@ -14,8 +15,9 @@ credentials = load_credentials()
 conn = sqlite3.connect('repair_blog_db.db')
 c = conn.cursor()
 
-# Create tables for repair requests, training requests, and blogs
+# Create tables for repair requests, training requests, blogs, and feedback
 c.execute('''CREATE TABLE IF NOT EXISTS requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT, 
     name TEXT, 
     employee_no TEXT, 
@@ -26,38 +28,41 @@ c.execute('''CREATE TABLE IF NOT EXISTS requests (
     quantity INTEGER, 
     defect_description TEXT, 
     priority TEXT, 
-    status TEXT
-)''')
-
-c.execute('''CREATE TABLE IF NOT EXISTS blogs (
-    author TEXT, 
-    title TEXT, 
-    content TEXT
+    status TEXT DEFAULT 'Pending'
 )''')
 
 c.execute('''CREATE TABLE IF NOT EXISTS training_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT, 
     name TEXT, 
     employee_no TEXT, 
     station TEXT, 
     designation TEXT, 
-    available_slots TEXT, 
-    status TEXT
+    training_slot TEXT
 )''')
+
+c.execute('''CREATE TABLE IF NOT EXISTS blogs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    author TEXT, 
+    title TEXT, 
+    content TEXT
+)''')
+
+c.execute('''CREATE TABLE IF NOT EXISTS feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT, 
+    request_id INTEGER, 
+    feedback TEXT, 
+    rating INTEGER
+)''')
+
 conn.commit()
 
 # Helper functions for database operations
 def add_request(username, name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority):
     c.execute(
-        "INSERT INTO requests (username, name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-        (username, name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority, 'Pending')
-    )
-    conn.commit()
-
-def add_training_request(username, name, employee_no, station, designation, available_slots):
-    c.execute(
-        "INSERT INTO training_requests (username, name, employee_no, station, designation, available_slots, status) VALUES (?, ?, ?, ?, ?, ?, ?)", 
-        (username, name, employee_no, station, designation, available_slots, 'Pending')
+        "INSERT INTO requests (username, name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+        (username, name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority)
     )
     conn.commit()
 
@@ -68,49 +73,42 @@ def get_requests(username=None):
         c.execute("SELECT rowid, * FROM requests")
     return c.fetchall()
 
-def get_training_requests(username=None):
-    if username:
-        c.execute("SELECT rowid, * FROM training_requests WHERE username = ?", (username,))
-    else:
-        c.execute("SELECT rowid, * FROM training_requests")
-    return c.fetchall()
-
-def get_blogs():
-    c.execute("SELECT * FROM blogs")
-    return c.fetchall()
+def add_training_request(username, name, employee_no, station, designation, training_slot):
+    c.execute(
+        "INSERT INTO training_requests (username, name, employee_no, station, designation, training_slot) VALUES (?, ?, ?, ?, ?, ?)",
+        (username, name, employee_no, station, designation, training_slot)
+    )
+    conn.commit()
 
 def add_blog(author, title, content):
     c.execute("INSERT INTO blogs (author, title, content) VALUES (?, ?, ?)", (author, title, content))
     conn.commit()
 
+def get_blogs():
+    c.execute("SELECT * FROM blogs")
+    return c.fetchall()
+
+def add_feedback(username, request_id, feedback, rating):
+    c.execute(
+        "INSERT INTO feedback (username, request_id, feedback, rating) VALUES (?, ?, ?, ?)", 
+        (username, request_id, feedback, rating)
+    )
+    conn.commit()
+
 # Display logos and heading
 def display_logo_and_heading():
-    ntpc_logo_path = "ntpc_logo.png"  
-    elab_logo_path = "centralized_elab_logo.png"  
+    ntpc_logo_path = "ntpc_logo.png"
+    elab_logo_path = "centralized_elab_logo.png"
 
     col1, col2, col3 = st.columns([1, 4, 1])
-
     with col1:
         if os.path.exists(ntpc_logo_path):
             st.image(ntpc_logo_path, use_column_width=False, width=150)
-        else:
-            st.warning("NTPC logo not found!")
-
     with col2:
-        st.markdown(
-            """
-            <div style="display: flex; justify-content: center; align-items: center; height: 200px;">
-                <h1 style="text-align: center; font-size: 40px; color: #333;">NTPC Electronics Repair Lab</h1>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
+        st.markdown("<h1 style='text-align: center;'>NTPC Electronics Repair Lab</h1>", unsafe_allow_html=True)
     with col3:
         if os.path.exists(elab_logo_path):
-            st.image(elab_logo_path, use_column_width=False, width=280)
-        else:
-            st.warning("Centralized E-Lab logo not found!")
+            st.image(elab_logo_path, use_column_width=False, width=150)
 
 # Login functionality
 def login():
@@ -128,7 +126,62 @@ def login():
         else:
             st.sidebar.error("Invalid login credentials")
 
-# Main app
+# Repair Request Form
+def repair_request_form():
+    st.header("Submit Repair Request")
+    name = st.text_input("Name")
+    employee_no = st.text_input("Employee No.")
+    station = st.text_input("Station")
+    department = st.text_input("Department")
+    material_name = st.text_input("Material Name")
+    material_code = st.text_input("Material Code")
+    quantity = st.number_input("Quantity", min_value=1)
+    defect_description = st.text_area("Defect Description")
+    priority = st.selectbox("Priority", ["Low", "Medium", "High"])
+
+    if st.button("Submit"):
+        add_request(st.session_state['username'], name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority)
+        st.success("Repair request submitted successfully")
+
+# Training Request Form
+def training_request_form():
+    st.header("Submit Training Request")
+    name = st.text_input("Name")
+    employee_no = st.text_input("Employee No.")
+    station = st.text_input("Station")
+    designation = st.text_input("Designation")
+    training_slot = st.date_input("Available Training Slot")
+
+    if st.button("Submit Training Request"):
+        add_training_request(st.session_state['username'], name, employee_no, station, designation, training_slot)
+        st.success("Training request submitted successfully")
+
+# View Repair Status and Provide Feedback
+def view_repair_status_and_feedback():
+    st.header("View Repair Status and Provide Feedback")
+    requests = get_requests(st.session_state['username'])
+
+    if requests:
+        for req in requests:
+            st.markdown(f"**Request ID:** {req[0]}")
+            st.markdown(f"**Material:** {req[6]}")
+            st.markdown(f"**Quantity:** {req[7]}")
+            st.markdown(f"**Defect Description:** {req[9]}")
+            st.markdown(f"**Priority:** {req[10]}")
+            st.markdown(f"**Status:** {req[11]}")
+
+            if req[11] == "Completed":
+                st.markdown("### Provide Feedback")
+                feedback = st.text_area(f"Feedback for Request ID {req[0]}", key=f"feedback_{req[0]}")
+                rating = st.slider(f"Rating for Request ID {req[0]} (1-5)", min_value=1, max_value=5, step=1, key=f"rating_{req[0]}")
+                if st.button(f"Submit Feedback for Request ID {req[0]}", key=f"submit_feedback_{req[0]}"):
+                    add_feedback(st.session_state['username'], req[0], feedback, rating)
+                    st.success(f"Feedback submitted for Request ID {req[0]}")
+            st.markdown("---")
+    else:
+        st.info("No repair requests found.")
+
+# Main Application
 def main():
     if "auth_state" not in st.session_state:
         st.session_state.auth_state = False
@@ -138,70 +191,17 @@ def main():
     if not st.session_state.auth_state:
         login()
     else:
-        st.title(f"Welcome, {st.session_state['username']}")
-        option = st.selectbox(
-            "Choose an option", 
-            ["Repair Request Form", "Training Request Form", "View Repair Status", "Provide Feedback", "View Blogs", "Post Blog"]
-        )
-
-        if option == "Repair Request Form":
-            st.header("Repair Request Form")
-            name = st.text_input("Name")
-            employee_no = st.text_input("Employee No.")
-            station = st.text_input("Station")
-            department = st.text_input("Department")
-            material_name = st.text_input("Material Name")
-            material_code = st.text_input("Material Code")
-            quantity = st.number_input("Quantity", min_value=1)
-            defect_description = st.text_area("Defect Description")
-            priority = st.selectbox("Priority", ["Low", "Medium", "High"])
-
-            if st.button("Submit Repair Request"):
-                add_request(st.session_state['username'], name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority)
-                st.success("Repair request submitted successfully")
-
-        elif option == "Training Request Form":
-            st.header("Training Request Form")
-            name = st.text_input("Name")
-            employee_no = st.text_input("Employee No.")
-            station = st.text_input("Station")
-            designation = st.text_input("Designation")
-            available_slots = st.text_area("Available Training Slots (Date and Time)")
-
-            if st.button("Submit Training Request"):
-                add_training_request(st.session_state['username'], name, employee_no, station, designation, available_slots)
-                st.success("Training request submitted successfully")
-
-        elif option == "View Repair Status":
-            st.header("Repair Status")
-            requests = get_requests(st.session_state['username'])
-            for req in requests:
-                st.write(f"Request ID: {req[0]}")
-                st.write(f"Material: {req[6]} | Status: {req[11]}")
-                st.write("---")
-
-        elif option == "Provide Feedback":
-            st.header("Provide Feedback")
-            st.text_area("Feedback")
-            if st.button("Submit Feedback"):
-                st.success("Feedback submitted successfully!")
-
-        elif option == "View Blogs":
-            st.header("Blogs")
-            blogs = get_blogs()
-            for blog in blogs:
-                st.subheader(blog[1])
-                st.write(f"By: {blog[0]}")
-                st.write(blog[2])
-                st.write("---")
-
-        elif option == "Post Blog":
-            st.header("Post a Blog")
-            title = st.text_input("Blog Title")
-            content = st.text_area("Blog Content")
-            if st.button("Post"):
-                add_blog(st.session_state['username'], title, content)
-                st.success("Blog posted successfully")
+        if st.session_state['role'] == 'User':
+            option = st.sidebar.radio("Navigation", ["Repair Request", "Training Request", "View Repair Status"])
+            if option == "Repair Request":
+                repair_request_form()
+            elif option == "Training Request":
+                training_request_form()
+            elif option == "View Repair Status":
+                view_repair_status_and_feedback()
+        elif st.session_state['role'] == 'Admin':
+            st.header("Admin Dashboard")
+            admin_update_request_status()
 
 if __name__ == "__main__":
     main()
