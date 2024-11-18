@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 import sqlite3
 import json
 import os
@@ -15,7 +14,7 @@ credentials = load_credentials()
 conn = sqlite3.connect('repair_blog_db.db')
 c = conn.cursor()
 
-# Create tables for repair requests, blogs, and training requests
+# Create tables for repair requests, training requests, and blogs
 c.execute('''CREATE TABLE IF NOT EXISTS requests (
     username TEXT, 
     name TEXT, 
@@ -62,16 +61,18 @@ def add_training_request(username, name, employee_no, station, designation, avai
     )
     conn.commit()
 
-def update_request_status(request_id, new_status):
-    c.execute("UPDATE requests SET status = ? WHERE rowid = ?", (new_status, request_id))
-    conn.commit()
-
-def get_requests():
-    c.execute("SELECT rowid, * FROM requests")
+def get_requests(username=None):
+    if username:
+        c.execute("SELECT rowid, * FROM requests WHERE username = ?", (username,))
+    else:
+        c.execute("SELECT rowid, * FROM requests")
     return c.fetchall()
 
-def get_user_requests(username):
-    c.execute("SELECT rowid, * FROM requests WHERE username = ?", (username,))
+def get_training_requests(username=None):
+    if username:
+        c.execute("SELECT rowid, * FROM training_requests WHERE username = ?", (username,))
+    else:
+        c.execute("SELECT rowid, * FROM training_requests")
     return c.fetchall()
 
 def get_blogs():
@@ -82,12 +83,8 @@ def add_blog(author, title, content):
     c.execute("INSERT INTO blogs (author, title, content) VALUES (?, ?, ?)", (author, title, content))
     conn.commit()
 
-def get_training_requests():
-    c.execute("SELECT rowid, * FROM training_requests")
-    return c.fetchall()
-
+# Display logos and heading
 def display_logo_and_heading():
-    # Paths to logos
     ntpc_logo_path = "ntpc_logo.png"  
     elab_logo_path = "centralized_elab_logo.png"  
 
@@ -141,61 +138,70 @@ def main():
     if not st.session_state.auth_state:
         login()
     else:
-        if st.session_state['role'] == 'User':
-            st.title(f"Welcome, {st.session_state['username']}")
-            option = st.selectbox("Choose an option", ["Submit Repair Request", "Submit Training Request", "View Repair Status", "Provide Feedback", "View Blogs", "Post Blog"])
+        st.title(f"Welcome, {st.session_state['username']}")
+        option = st.selectbox(
+            "Choose an option", 
+            ["Repair Request Form", "Training Request Form", "View Repair Status", "Provide Feedback", "View Blogs", "Post Blog"]
+        )
 
-            if option == "Submit Repair Request":
-                st.header("Repair Request Form")
-                name = st.text_input("Name")
-                employee_no = st.text_input("Employee No.")
-                station = st.text_input("Station")
-                department = st.text_input("Department")
-                material_name = st.text_input("Material Name")
-                material_code = st.text_input("Material Code")
-                quantity = st.number_input("Quantity", min_value=1)
-                defect_description = st.text_area("Defect Description")
-                priority = st.selectbox("Priority", ["Low", "Medium", "High"])
+        if option == "Repair Request Form":
+            st.header("Repair Request Form")
+            name = st.text_input("Name")
+            employee_no = st.text_input("Employee No.")
+            station = st.text_input("Station")
+            department = st.text_input("Department")
+            material_name = st.text_input("Material Name")
+            material_code = st.text_input("Material Code")
+            quantity = st.number_input("Quantity", min_value=1)
+            defect_description = st.text_area("Defect Description")
+            priority = st.selectbox("Priority", ["Low", "Medium", "High"])
 
-                if st.button("Submit Request"):
-                    add_request(st.session_state['username'], name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority)
-                    st.success("Repair request submitted successfully")
+            if st.button("Submit Repair Request"):
+                add_request(st.session_state['username'], name, employee_no, station, department, material_name, material_code, quantity, defect_description, priority)
+                st.success("Repair request submitted successfully")
 
-            elif option == "Submit Training Request":
-                st.header("Training Request Form")
-                name = st.text_input("Name")
-                employee_no = st.text_input("Employee No.")
-                station = st.text_input("Station")
-                designation = st.text_input("Designation")
-                available_slots = st.text_area("Available Training Slots (Date and Time)")
+        elif option == "Training Request Form":
+            st.header("Training Request Form")
+            name = st.text_input("Name")
+            employee_no = st.text_input("Employee No.")
+            station = st.text_input("Station")
+            designation = st.text_input("Designation")
+            available_slots = st.text_area("Available Training Slots (Date and Time)")
 
-                if st.button("Submit Training Request"):
-                    add_training_request(st.session_state['username'], name, employee_no, station, designation, available_slots)
-                    st.success("Training request submitted successfully")
+            if st.button("Submit Training Request"):
+                add_training_request(st.session_state['username'], name, employee_no, station, designation, available_slots)
+                st.success("Training request submitted successfully")
 
-            elif option == "View Repair Status":
-                st.header("Repair Status")
-                requests = get_user_requests(st.session_state['username'])
-                for req in requests:
-                    st.write(f"Request ID: {req[0]}")
-                    st.write(f"Material: {req[6]} | Status: {req[11]}")
-                    st.write("---")
-
-            elif option == "Provide Feedback":
-                st.header("Provide Feedback")
-                st.text_area("Feedback")
-                if st.button("Submit Feedback"):
-                    st.success("Feedback submitted successfully!")
-
-        elif st.session_state['role'] == 'Admin':
-            st.title(f"Welcome Admin, {st.session_state['username']}")
-            st.header("Manage Repair Requests")
-            requests = get_requests()
+        elif option == "View Repair Status":
+            st.header("Repair Status")
+            requests = get_requests(st.session_state['username'])
             for req in requests:
-                st.write(f"Request ID: {req[0]} | Priority: {req[10]}")
-                if st.button("Mark as Completed", key=req[0]):
-                    update_request_status(req[0], "Completed")
-                    st.success("Status updated successfully")
+                st.write(f"Request ID: {req[0]}")
+                st.write(f"Material: {req[6]} | Status: {req[11]}")
+                st.write("---")
+
+        elif option == "Provide Feedback":
+            st.header("Provide Feedback")
+            st.text_area("Feedback")
+            if st.button("Submit Feedback"):
+                st.success("Feedback submitted successfully!")
+
+        elif option == "View Blogs":
+            st.header("Blogs")
+            blogs = get_blogs()
+            for blog in blogs:
+                st.subheader(blog[1])
+                st.write(f"By: {blog[0]}")
+                st.write(blog[2])
+                st.write("---")
+
+        elif option == "Post Blog":
+            st.header("Post a Blog")
+            title = st.text_input("Blog Title")
+            content = st.text_area("Blog Content")
+            if st.button("Post"):
+                add_blog(st.session_state['username'], title, content)
+                st.success("Blog posted successfully")
 
 if __name__ == "__main__":
     main()
